@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "MeeetPRO",
+  "description": "Toggle a distraction-free spotlight view in Google Meet while keeping the People panel accessible. Forces square 1280x720 video.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "MeeetPRO: Toggle Clean Spotlight"
+  },
+  "permissions": [
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://meet.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-meetpro": {
+      "suggested_key": {
+        "default": "Alt+Shift+M"
+      },
+      "description": "Toggle MeeetPRO on the current Meet tab"
+    }
+  }
+}
