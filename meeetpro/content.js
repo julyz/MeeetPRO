@@ -70,7 +70,6 @@
       el.classList.remove(KEEP_CLASS);
       el.classList.remove(STAGE_CLASS);
       el.classList.remove(PEOPLE_CLASS);
-      // Clean inline styles we might have set
       if (el === STATE.currentVideoEl) {
         el.style.width = '';
         el.style.height = '';
@@ -96,7 +95,6 @@
   }
 
   function findPeoplePanel() {
-    // Try several selectors that commonly match the People panel
     const candidates = [
       '[data-panel-id="people"]',
       '[aria-label="People"]',
@@ -112,7 +110,6 @@
   }
 
   function ensurePeoplePanelOpen() {
-    // If not visible, try to click a People/Show everyone button
     let panel = findPeoplePanel();
     if (panel) return panel;
 
@@ -129,21 +126,17 @@
         break;
       }
     }
-    // Give the DOM a moment to render
     return findPeoplePanel();
   }
 
   function layoutStageAroundPeople(stageEl, peopleEl) {
     if (!stageEl) return;
-    // Default: full viewport
     stageEl.classList.add(STAGE_CLASS);
     if (!peopleEl || !isElementVisible(peopleEl)) return;
 
-    // Estimate panel width and leave space for it by setting stageEl right inset
     const rect = peopleEl.getBoundingClientRect();
     const panelWidth = Math.max(0, Math.floor(rect.width));
     stageEl.style.right = panelWidth ? `${panelWidth}px` : '0';
-    // Ensure panel stays above stage
     peopleEl.classList.add(PEOPLE_CLASS);
     peopleEl.style.zIndex = '2';
   }
@@ -157,20 +150,17 @@
       markKeepForChain(largestVideo);
       sizeVideo1280x720(largestVideo);
 
-      // The top-most kept ancestor (closest to body) will become the stage
       let stageEl = largestVideo;
       let prev = null;
       while (stageEl && stageEl.parentElement && stageEl.parentElement !== document.body) {
         prev = stageEl;
         stageEl = stageEl.parentElement;
       }
-      // If prev exists, use the ancestor just under body as stage, else use current container
       STATE.currentStageEl = stageEl || largestVideo;
       STATE.currentStageEl.classList.add(KEEP_CLASS);
       STATE.currentStageEl.classList.add(STAGE_CLASS);
     }
 
-    // Keep the People panel as well
     const peopleEl = ensurePeoplePanelOpen();
     if (peopleEl) {
       STATE.currentPeopleEl = peopleEl;
@@ -178,7 +168,6 @@
       peopleEl.classList.add(PEOPLE_CLASS);
     }
 
-    // Layout adjustments after both are identified
     layoutStageAroundPeople(STATE.currentStageEl, STATE.currentPeopleEl);
   }
 
@@ -188,7 +177,6 @@
 
     if (!STATE.mutationObserver) {
       STATE.mutationObserver = new MutationObserver(() => {
-        // Debounce by scheduling the next tick
         if (STATE.enabled) {
           queueMicrotask(enforceOnce);
         }
@@ -216,9 +204,11 @@
     if (STATE.enabled) return;
     STATE.enabled = true;
     injectStyleOnce();
-    document.documentElement.classList.add(ROOT_ON_CLASS);
+    // IMPORTANT: mark keep targets before hiding the rest
     enforceOnce();
+    document.documentElement.classList.add(ROOT_ON_CLASS);
     startEnforcement();
+    try { console.debug('[MeeetPRO] Enabled'); } catch (_) {}
   }
 
   function disable() {
@@ -228,13 +218,13 @@
     document.documentElement.classList.remove(ROOT_ON_CLASS);
     clearKeepMarks();
     removeStyleIfAny();
+    try { console.debug('[MeeetPRO] Disabled'); } catch (_) {}
   }
 
   function toggle() {
     if (STATE.enabled) disable(); else enable();
   }
 
-  // Toggle message from background
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     if (!msg || msg.type !== 'MEEETPRO_TOGGLE') return;
     try {
@@ -243,11 +233,9 @@
     } catch (e) {
       sendResponse && sendResponse({ ok: false, error: String(e) });
     }
-    // Keep channel open only if we plan async response; we don't
     return false;
   });
 
-  // Optional: expose a keyboard fallback inside page (Alt+Shift+M) if background commands fail
   window.addEventListener('keydown', (e) => {
     if (e.altKey && e.shiftKey && (e.key === 'M' || e.key === 'm')) {
       toggle();
